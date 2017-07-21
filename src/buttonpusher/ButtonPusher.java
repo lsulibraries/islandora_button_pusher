@@ -24,30 +24,63 @@ public class ButtonPusher {
     private WebDriver driver;
     private String host;
     private String root = "/islandora";
+    private String repositoryRoot;
+    private DigitalLibrary dlib;
+    private int lastPage;
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws InterruptedException {
         ButtonPusher pusher = new ButtonPusher();
         
-        List<String> searchTerms = new ArrayList<String>(Arrays.asList("goat", "boy", "chicken", "hurricane", "apple", "orange", "ferry", "boat"));
-        List<String> firstPageCollections = pusher.getCollections("http://" + pusher.host + pusher.root);
-        DigitalLibrary dlib = new DigitalLibrary();
+//        List<String> searchTerms = new ArrayList<String>(Arrays.asList("goat", "boy", "chicken", "hurricane", "apple", "orange", "ferry", "boat"));
+//        List<String> firstPageCollections = pusher.getCollections("http://" + pusher.host + pusher.root);
+//
+//        for(String collection : pusher.getAllCollections()) {
+//            pusher.dlib.addCollection(collection);
+//        }
 
-        for(String collection : pusher.getAllCollections()) {
-            dlib.addCollection(collection);
+        ArrayList<String> toVisit = pusher.populateDigitalLibraryData();
+        for(String collection : toVisit) {
+            ArrayList<String> items = pusher.dlib.getRandomItems(collection, 5);
+            pusher.visitItems(items);
         }
-
-        ArrayList<String> collectionsUnderTest = dlib.getRandomCollections(5);
-
-        Thread.sleep(1000);
-        for (String collectionURL : collectionsUnderTest) {
-            
-            List<String> itemURLs = dlib.getRandomItems(collectionURL, 5);
-            pusher.visitItems(itemURLs);
-        }
+//        Thread.sleep(1000);
+//        for (String collectionURL : collectionsUnderTest) {
+//            
+//            List<String> itemURLs = pusher.dlib.getRandomItems(collectionURL, 5);
+//            pusher.visitItems(itemURLs);
+//        }
 
         pusher.driver.close();
+    }
+
+    public ArrayList<String> populateDigitalLibraryData() {
+        int n = 2;
+        this.getRandomCollectionURLs(n);
+        ArrayList<String> populatedCollections = new ArrayList<>();
+
+        for(String collection : this.dlib.getRandomCollections(n)) {
+            ArrayList<String> items = this.getItemUrls(collection);
+            this.dlib.collections.get(collection).items.addAll(items);
+            populatedCollections.add(collection);
+        }
+        return populatedCollections;
+    }
+
+    private List<String> getRandomCollectionURLs(int n) {
+        List<String> collections = new ArrayList<>();
+        for(int i = 0; i < n; i++) {
+            String rPage = this.getRandomPageURL("islandora:root");
+            String rColl = this.getRandomCollectionURL(rPage);
+        }
+        return collections;
+    }
+    
+    private String getRandomCollectionURL(String pageURL) {
+        List<String> collectionsOnPage = this.getCollections(pageURL);
+        Random r = new Random();
+        return collectionsOnPage.get(r.nextInt(collectionsOnPage.size()));
     }
 
     public ButtonPusher() {
@@ -60,6 +93,9 @@ public class ButtonPusher {
 //        String host = "test.louisianadigitallibrary.org";
 //        String host = "lib-ti012.lsu.edu:8000";
         this.host = host;
+        this.repositoryRoot = "http://" + this.host + this.root;
+
+        this.dlib = new DigitalLibrary();
     }
 
     private void testSearch(List<String> searchTerms) {
@@ -73,7 +109,9 @@ public class ButtonPusher {
         List<WebElement> collectionURLs = driver.findElements(By.xpath("//div[@class=\"islandora-basic-collection-wrapper\"]//dd/a"));
         List<String> urls = new ArrayList<String>();
         for (WebElement a : collectionURLs) {
-            urls.add(a.getAttribute("href"));
+            String url = a.getAttribute("href");
+            urls.add(url);
+            this.dlib.addCollection(url);
         }
         return urls;
     }
@@ -81,7 +119,7 @@ public class ButtonPusher {
     private List<String> getAllCollections(){
         ArrayList<String> allCollections = new ArrayList<>();
         String collectionRoot = this.host + this.root;
-        int lastPage = Integer.parseInt(this.lastPage(collectionRoot));
+        int lastPage = this.lastPage(collectionRoot);
         for (int i = 0; i < lastPage; i++) {
             String pageURL = "http://" + host + root + "/object/islandora%3Aroot?page=" + i;
             List<String> collections = getCollections(pageURL);
@@ -90,13 +128,18 @@ public class ButtonPusher {
         return allCollections;
     }
 
-    private String lastPage(String collectionURL) {
+    private int lastPage(String collectionURL) {
+        if(this.lastPage != 0) {
+            return this.lastPage;
+        }
+        driver.get(this.repositoryRoot);
         String xpath = "//li[@class=\"pager-last last\"]/a";
         List<WebElement> pagerLast = driver.findElements(By.xpath(xpath));
         String href = pagerLast.get(0).getAttribute("href");
         int len = href.length();
         String lastPage = href.substring(len - 2, len);
-        return lastPage;
+        this.lastPage = Integer.parseInt(lastPage);
+        return this.lastPage;
     }
 
     private void visitItems(List<String> items) {
@@ -105,23 +148,29 @@ public class ButtonPusher {
         }
     }
 
-    private List<String> getItemUrls(String itemListingURL) {
+    private ArrayList<String> getItemUrls(String itemListingURL) {
         driver.get(itemListingURL);
         List<WebElement> anchors = driver.findElements(By.xpath("//div[@class=\"islandora-basic-collection-wrapper\"]//dd/a"));
-        List<String> urls = new ArrayList<String>();
+        ArrayList<String> urls = new ArrayList<String>();
         for (WebElement a : anchors) {
             urls.add(a.getAttribute("href"));
         }
         return urls;
     }
     
-    private ArrayList<Integer> getRandomPage(String url, int n) {
+    private String getRandomPageURL(String collectionAlias) {
         ArrayList<Integer> pages = new ArrayList<>();
-        int lastPage = Integer.parseInt(this.lastPage(this.host + this.root));
+        Random r = new Random();
+        int n = r.nextInt(this.lastPage(this.host + this.root) + 1);
+        return this.repositoryRoot + "/object/" + collectionAlias + "?page=" + Integer.toString(n);
+    }
+
+    private List<String> getRandomForList(ArrayList<String> list, int n) {
+        ArrayList<String> rnd = new ArrayList<>();
         Random r = new Random();
         for(int i = 0; i < n; i++) {
-            pages.add(r.nextInt(lastPage + 1));
+            rnd.add(list.get(r.nextInt(list.size())));
         }
-        return pages;
+        return rnd;
     }
 }

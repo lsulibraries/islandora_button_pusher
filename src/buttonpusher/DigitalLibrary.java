@@ -14,21 +14,27 @@ import java.util.Random;
  * @author jason
  */
 public class DigitalLibrary {
-    public HashMap<String, ArrayList<String>> collections;
+    public HashMap<String, Collection> collections;
     public DigitalLibrary() {
         this.collections = new HashMap<>();
     }
     
     public void addCollection(String collectionURL) {
-        this.collections.put(collectionURL, new ArrayList<>());
+        // Check first to avoid dupes.
+        if(this.collections.get(collectionURL) == null) {
+            this.collections.put(collectionURL, new Collection());
+        }
     }
     
     public void addItem(String collectionURL, String itemURL) {
-        this.collections.get(collectionURL).add(itemURL);
+
+        if(!this.collections.get(collectionURL).items.contains(itemURL)) {
+            this.collections.get(collectionURL).items.add(itemURL);
+        }
     }
 
     public int collectionSize(String collectionURL){
-        return this.collections.get(collectionURL).size();
+        return this.collections.get(collectionURL).items.size();
     }
 
     public ArrayList<String> getRandomCollections(int n) {
@@ -43,7 +49,7 @@ public class DigitalLibrary {
     }
 
     public ArrayList<String> getRandomItems(String collection, int n) {
-        ArrayList<String> urls = this.collections.get(collection);
+        ArrayList<String> urls = this.collections.get(collection).items;
         ArrayList<String> items = new ArrayList<>();
 
         Random r = new Random();
