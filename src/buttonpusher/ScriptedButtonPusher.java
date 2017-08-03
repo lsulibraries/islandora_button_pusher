@@ -14,7 +14,7 @@ import java.util.List;
 public class ScriptedButtonPusher extends ButtonPusher {
     public ScriptedButtonPusher() {
         super();
-        this.host = "192.168.111.111";
+        this.host = "lib-dig003.lsu.edu:8000";
     }
 
     @Override
