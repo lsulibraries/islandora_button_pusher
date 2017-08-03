@@ -1,0 +1,5 @@
+islandora/object/latech-cmprt:collection
+lsu
+uno
+islandora/object/latech-cmprt:1
+mcneese/admin

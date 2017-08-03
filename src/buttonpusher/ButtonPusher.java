@@ -21,39 +21,12 @@ import java.util.Random;
  */
 public class ButtonPusher {
 
-    private WebDriver driver;
-    private String host;
+    WebDriver driver;
+    String host;
     private String root = "/islandora";
     private String repositoryRoot;
-    private DigitalLibrary dlib;
+    DigitalLibrary dlib;
     private int lastPage;
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) throws InterruptedException {
-        ButtonPusher pusher = new ButtonPusher();
-        
-//        List<String> searchTerms = new ArrayList<String>(Arrays.asList("goat", "boy", "chicken", "hurricane", "apple", "orange", "ferry", "boat"));
-//        List<String> firstPageCollections = pusher.getCollections("http://" + pusher.host + pusher.root);
-//
-//        for(String collection : pusher.getAllCollections()) {
-//            pusher.dlib.addCollection(collection);
-//        }
-
-        ArrayList<String> toVisit = pusher.populateDigitalLibraryData();
-        for(String collection : toVisit) {
-            ArrayList<String> items = pusher.dlib.getRandomItems(collection, 5);
-            pusher.visitItems(items);
-        }
-//        Thread.sleep(1000);
-//        for (String collectionURL : collectionsUnderTest) {
-//            
-//            List<String> itemURLs = pusher.dlib.getRandomItems(collectionURL, 5);
-//            pusher.visitItems(itemURLs);
-//        }
-
-        pusher.driver.close();
-    }
 
     public ArrayList<String> populateDigitalLibraryData() {
         int n = 2;
@@ -142,7 +115,7 @@ public class ButtonPusher {
         return this.lastPage;
     }
 
-    private void visitItems(List<String> items) {
+    void visitItems(List<String> items) {
         for (String url : items) {
             driver.get(url);
         }
